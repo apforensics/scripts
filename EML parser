@@ -1,0 +1,17 @@
+#This is a script which will parse data from an EML file and export it to a text file.
+$export = "SOME DIRECTORY WHERE YOU WANT OUT FILE TO SIT" 
+Get-ChildItem "SOME DIRECTORY CONTAINING EML" -Recurse -Filter *.eml | ForEach-Object{
+$adoDbStream = New-Object -ComObject ADODB.Stream
+$adoDbStream.Open()
+$adoDbStream.LoadFromFile($_.FullName)
+$cdoMessage = New-Object -ComObject CDO.Message
+$cdoMessage.DataSource.OpenObject($adoDbStream, "_Stream")
+$cdoMessage.Fields.Item("urn:schemas:mailheader:date").Value | Out-File $export -Append
+$cdoMessage.Fields.Item("urn:schemas:mailheader:to").Value | Out-File $export -Append
+$cdoMessage.Fields.Item("urn:schemas:mailheader:from").Value | Out-File $export -Append
+$cdoMessage.Fields.Item("urn:schemas:mailheader:bcc").Value | Out-File $export -Append
+$cdoMessage.Fields.Item("urn:schemas:mailheader:cc").Value | Out-File $export -Append
+$cdoMessage.Fields.Item("urn:schemas:mailheader:subject").Value | Out-File $export -Append
+$cdoMessage.Fields.Item("urn:schemas:mailheader:sent").Value | Out-File $export -Append
+$cdoMessage.Fields.Item("urn:schemas:mailheader:message-id").Value | Out-File $export -Append
+}
