@@ -15,3 +15,8 @@ $cdoMessage.Fields.Item("urn:schemas:mailheader:subject").Value | Out-File $expo
 $cdoMessage.Fields.Item("urn:schemas:mailheader:sent").Value | Out-File $export -Append
 $cdoMessage.Fields.Item("urn:schemas:mailheader:message-id").Value | Out-File $export -Append
 }
+Function GetFileNames([string]$path, [string]$outputFile) {
+$list = Get-ChildItem $path -Recurse
+$list | Select-Object BaseName, FullName | Export-Csv $outputFile
+}
+GetFileNames "DIR WHERE EMLS SIT" "DIR EXPORT.CSV"
