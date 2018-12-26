@@ -1,5 +1,5 @@
 #This script will run a REGEX of terms against EML files and output a csv file of the terms and the email headers 
-#Major props to @https://github.com/picheljitsu for helping me out
+#Major props to @https://github.com/picheljitsu for helping me out because I am a potato with POSH 
 #Run in Powershell ISE
 #Get-MsgContents -OutputFile whatever.csv 
 
@@ -9,7 +9,11 @@ function Get-MsgContents{
         [parameter()][string]$OutputFile
         )
 #Put regex in below quotes line by line 
-    $RegexTermsString = "    "
+#Example strings below
+    $RegexTermsString = "Example1
+    Example2
+    Example3
+    etc"
 
     #Split the RegexTerms from its curren format of a string, into an array
     #First split on new line
