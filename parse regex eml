@@ -1,0 +1,262 @@
+# Run in Powershell ISE 
+# Get-MsgContents -OutputFile file.csv whatever filename 
+function Get-MsgContents{
+    [Cmdletbinding()]
+    param(
+        [parameter()][string]$OutputFile
+        )
+
+    $RegexTermsString = "Name
+    [0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{4}
+    [0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4}
+    [0-9]{16}
+    [0-9]{4}-[0-9]{6}-[0-9]{5}
+    [0-9]{4} [0-9]{6} [0-9]{5}
+    [0-9]{15}
+    [0-9]{9}
+    [0-9]{3}-[0-9]{2}-[0-9]{4}
+    [0-9]{3} [0-9]{2} [0-9]{4}
+    [0-9]{2}-[0-9]{7}
+    [0-9]{2} [0-9]{7}
+    [0-9]{9}[a-e]
+    A number
+    access codes
+    account #
+    account num*
+    account number*
+    Account numbers
+    accounts num
+    acct
+    acct#
+    Alien registration numbers
+    American Express
+    AMEX
+    A-number
+    Auto Loan number
+    Auto Loan*
+    BIN
+    BIN#
+    Biometric data OR fingerprint OR finger print* OR retina OR iris image
+    Birth certificate
+    Birth Date
+    BR
+    Brokerage Account
+    Card ID
+    Card number*
+    Card#
+    Card*
+    Cardholder Name
+    CAV
+    CAV2
+    CC#
+    CD
+    Certificate of Deposit
+    Checking account
+    Checking number*
+    CID
+    COD
+    Commercial Loan number
+    Commercial Loan*
+    credit avail*
+    Credit card number*
+    Credit Card*
+    credit limit*
+    Credit W/3 line
+    CSC
+    CVC
+    CVC2
+    CVV
+    CVV2
+    D/O/B
+    Date of Birth
+    Dates of birth
+    DDA
+    Debit card number*
+    Debit Card*
+    demand deposit account
+    Digitized W/3 signature
+    DL No.
+    DL#
+    DNA profiles
+    DOB
+    Driver license
+    Driver* W/3 license
+    Driver's license numbers
+    Drivers License
+    Driver's license
+    Electronic signature* OR digitized signature*
+    Electronic W/3 signature
+    employee ID*
+    Employee identification number
+    employee number
+    EXP
+    exp* date
+    Expir*
+    Expiration Date
+    Expiry
+    EXPN
+    federal-issued identification card numbers
+    First Name
+    First Pet
+    green card
+    Group ID
+    Group#
+    GroupID
+    Health Information
+    health insurance information
+    HELOC
+    Home Equit*
+    Home Equity Line of Credit
+    ID No
+    Id num*
+    ID number*
+    ID#
+    Identification card
+    Identification num*
+    Identification number*
+    Identity Theft Protection Personal IDs
+    Identity theft protection
+    IM
+    Last Name
+    Line of Credit
+    loan num
+    Loan number*
+    loan
+    loan#
+    loan*
+    Log in account*
+    Log in ID
+    Log in
+    Maiden Name
+    Maiden
+    marriage certificate
+    Mastercard
+    Medical Information
+    Medical or health information
+    Military ID numbers
+    Military ID
+    Month/Day of Birth
+    Mortgage Loan*
+    Mortgage*
+    Mother's maiden name
+    National identification number
+    National Identity Registration Number
+    National Insurance Number
+    National Registration Number
+    NIN
+    PAN
+    PAN#
+    Passport #
+    Passport ID
+    Passport No
+    Passport number*
+    Passport numbers
+    Passport
+    Passport#
+    Passwords
+    Performance* Eval*
+    Performance* Review*
+    Personal Identification Code
+    Pin Number*
+    PIN
+    PINs
+    Policy numbers
+    PPN
+    primary account number
+    Safe Deposit Box
+    Safe Deposit
+    SAV
+    Savings account
+    Savings
+    SD
+    Security answers
+    security question*
+    security questions
+    social security #
+    social security num*
+    Social Security number*
+    Social security
+    ss num
+    ss number*
+    ss
+    ss#
+    ssn*
+    State ID
+    State ID#
+    State Identification
+    State issued identification card numbers
+    Student Loan number
+    Student Loan*
+    Tax identification number*
+    tax num*
+    tin num*
+    tin
+    Tribal ID Card number*
+    Tribal ID
+    Tribal
+    USCIS
+    VISA
+    Work related evaluation
+    MC"
+
+    #Split the RegexTerms from its curren format of a string, into an array
+    #First split on new line
+    $RegexTermsArray = $RegexTermsString -split "`n"
+
+    #Now clean out the trailing new lines w/ trim method, then cast each string into a regex object
+    #Returns and array of Regex objects
+    $RegexObjectArray = $RegexTermsArray | Foreach { [regex]$($_.trim()) }
+
+    $GetEMLFiles = Get-ChildItem . -Recurse -Filter *.eml 
+    $MatchCounter = 0
+    $MatchedFileNames = @()
+    ForEach($EMLFile in $GetEMLFiles){
+        $fullname = $EMLFile.fullname
+        $adoDbStream = New-Object -ComObject ADODB.Stream
+        $adoDbStream.Open()
+        $adoDbStream.LoadFromFile($EMLFile.FullName)
+        $cdoMessage = New-Object -ComObject CDO.Message
+        $cdoMessage.DataSource.OpenObject($adoDbStream, "_Stream")
+        
+        #First, only process the htmlbody against a regex, if we have a match, then build out the header/file info
+        $htmlbody = $($cdoMessage.HTMLBody).tostring()
+
+        #Check to see if e-mail body contents matches any of the regex objects
+        Foreach($RegexObj in $RegexObjectArray)
+            {
+
+            if($htmlbody -match $RegexObj)
+                { 
+
+                $messageArray = @($cdoMessage.Fields.Item("urn:schemas:mailheader:date").Value, 
+                                  $cdoMessage.Fields.Item("urn:schemas:mailheader:to").Value, 
+                                  $cdoMessage.Fields.Item("urn:schemas:mailheader:from").Value, 
+                                  $cdoMessage.Fields.Item("urn:schemas:mailheader:bcc").Value, 
+                                  $cdoMessage.Fields.Item("urn:schemas:mailheader:cc").Value,
+                                  $cdoMessage.Fields.Item("urn:schemas:mailheader:subject").Value, 
+                                  $cdoMessage.Fields.Item("urn:schemas:mailheader:sent").Value, 
+                                  $cdoMessage.Fields.Item("urn:schemas:mailheader:message-id").Value)
+
+                #only add the file name to the matchedfilenames array if it's not already there
+                #and only output to csv for each file that gets at least one regex hit
+                if($fullname -notin $MatchedFileNames)
+                    { 
+                    $MatchedFileNames += $fullname 
+                    $CSVLine = $($messageArray -join ",").ToString()
+                    $CSVLine | ConvertFrom-CSV -Header Date,To,From,Bcc,CC,Subject,Sent,Message-ID | Export-Csv -Path $OutputFile -Append -NoTypeInformation
+
+                    }
+                
+                $MatchCounter ++
+
+                }
+
+            }
+
+        }
+
+    write-host "[+] Searched $($GetEMLFiles.Length) .eml files" 
+    write-host "[+] Matched $($MatchedFileNames.Length) files" 
+    write-host "[+] Total of $MatchCounter matches in those $($MatchedFileNames.Length) files"
+
+    }
