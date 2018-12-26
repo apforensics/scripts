@@ -15,7 +15,7 @@ function Get-MsgContents{
     Example3
     etc"
 
-    #Split the RegexTerms from its curren format of a string, into an array
+    #Split the RegexTerms from its current format of a string, into an array
     #First split on new line
     $RegexTermsArray = $RegexTermsString -split "`n"
 
