@@ -1,5 +1,5 @@
 # Use Powershell ISE and change into root directory containing EML files. Run script in ISE and type Get-MsgContents in console. 
-# This script still needs a lot of work. Output will lbe thrown into console. 
+# This script still needs a lot of work. Output willl be thrown into console. 
 
 function Get-MsgContents{
 
