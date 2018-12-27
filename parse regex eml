@@ -1,21 +1,25 @@
-#This script will run a REGEX of terms against EML files and output a csv file of the terms and the email headers 
-#Major props to @https://github.com/picheljitsu for helping me out because I am a potato with POSH 
-#Run in Powershell ISE
-#Get-MsgContents -OutputFile whatever.csv 
+#Shoutout to https://github.com/picheljitsu for helping me out with this Powershell script since I am a n00b
+#Sample run with this cmdline: Process-EMLRegExs -OutputFile regex.csv
+#This will dump all the files into a new folder called EMLRegexHits thats created in whatever directory you run it from.
 
-function Get-MsgContents{
+function Process-EMLRegExs{
     [Cmdletbinding()]
     param(
-        [parameter()][string]$OutputFile
+        [parameter()][string]$OutputFile,
+        [parameter()][string]$EMLDestinationFolder
         )
-#Put regex in below quotes line by line 
-#Example strings below
-    $RegexTermsString = "Example1
-    Example2
-    Example3
+#Put REGEX strings below
+    $RegexTermsString = "Regex1
+    Regex2
+    Regex3
     etc"
 
-    #Split the RegexTerms from its current format of a string, into an array
+    #If you don't specify an destination to copy the message files to
+    #at runtime, then it'll be set to a folder in your current directory
+    #name EMLRegexHits
+    if(!$EMLDestinationFolder){ $EMLDestinationFolder = New-Item "EMLRegexHits" -ItemType Directory }
+
+    #Split the RegexTerms from its curren format of a string, into an array
     #First split on new line
     $RegexTermsArray = $RegexTermsString -split "`n"
 
@@ -26,8 +30,11 @@ function Get-MsgContents{
     $GetEMLFiles = Get-ChildItem . -Recurse -Filter *.eml 
     $MatchCounter = 0
     $MatchedFileNames = @()
+
     ForEach($EMLFile in $GetEMLFiles){
-        $fullname = $EMLFile.fullname
+
+        $EMLfullname = $EMLFile.fullname
+        $EMLfilename = $EMLFile.name
         $adoDbStream = New-Object -ComObject ADODB.Stream
         $adoDbStream.Open()
         $adoDbStream.LoadFromFile($EMLFile.FullName)
@@ -55,10 +62,23 @@ function Get-MsgContents{
 
                 #only add the file name to the matchedfilenames array if it's not already there
                 #and only output to csv for each file that gets at least one regex hit
-                if($fullname -notin $MatchedFileNames)
+                if($EMLfullname -notin $MatchedFileNames)
                     { 
-                    $MatchedFileNames += $fullname 
+                    
+                    #Add the name of the file to array collection if it's not already in
+                    #This will prevent one file with multiple regex hits from appending multiple time
+                    $MatchedFileNames += $EMLfullname
+
+                    $DestinationFile = "$EMLDestinationFolder\$EMLfilename"
+
+                    #Copy the hit file into the destination directory
+                    Copy-Item $EMLfullname $DestinationFile
+
+                    #Format the built $messageArray into a csv string
                     $CSVLine = $($messageArray -join ",").ToString()
+
+                    #Convert that CSV line into a PSObject that can be used with Export-CSV, then export it
+
                     $CSVLine | ConvertFrom-CSV -Header Date,To,From,Bcc,CC,Subject,Sent,Message-ID | Export-Csv -Path $OutputFile -Append -NoTypeInformation
 
                     }
