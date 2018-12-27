@@ -1,6 +1,7 @@
+#This script will perform a REGEX against EML files and export out the EML files with hits to a folder
+#A CSV containing the EML file information will also be generated
 #Shoutout to https://github.com/picheljitsu for helping me out with this Powershell script since I am a n00b
 #Sample run with this cmdline: Process-EMLRegExs -OutputFile regex.csv
-#This will dump all the files into a new folder called EMLRegexHits thats created in whatever directory you run it from.
 
 function Process-EMLRegExs{
     [Cmdletbinding()]
